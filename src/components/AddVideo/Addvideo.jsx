@@ -112,7 +112,7 @@ function Addvideo() {
                     formData.append(key, Array.isArray(form[key]) ? JSON.stringify(form[key]) : form[key])
                 }
             }
-            const response = await axios.post('http://localhost:5000/admin/addnewvideo', formData, {
+            const response = await axios.post('https://api.streamflics.xyz/admin/addnewvideo', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
