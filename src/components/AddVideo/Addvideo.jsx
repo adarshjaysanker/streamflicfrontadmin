@@ -236,13 +236,13 @@ function Addvideo() {
                 <img id='infoBanner-preview' className='preview-image' src="" alt="" />
 
                 <label htmlFor="trailerVideo">Trailer Video</label>
-                <input type="file" accept='video/*' name='trailerVideo' id='trailerVideo' onChange={(e) => handleVideoSelect(e.target.files[0], 'trailerVideo')} />
+                <input type="file" accept='video/*,.avi,.mov,.wmv,.flv,.mkv,.webm' name='trailerVideo' id='trailerVideo' onChange={(e) => handleVideoSelect(e.target.files[0], 'trailerVideo')} />
                 {trailerVideoPreviewUrl && (
                     <video src={trailerVideoPreviewUrl} controls className='preview-video'></video>
                 )}
 
                 <label htmlFor="movieVideo">Movie Video</label>
-                <input type="file" accept='video/*' name='movieVideo' onChange={(e) => handleVideoSelect(e.target.files[0], 'movieVideo')} />
+                <input type="file" accept='video/*,.avi,.mov,.wmv,.flv,.mkv,.webm' name='movieVideo' onChange={(e) => handleVideoSelect(e.target.files[0], 'movieVideo')} />
                 {movieVideoPreviewUrl && (
                     <video src={movieVideoPreviewUrl} controls className='preview-video'></video>
                 )}
