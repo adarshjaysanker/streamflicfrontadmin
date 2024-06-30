@@ -1,0 +1,21 @@
+.showvideo{
+    padding: 20px;
+    margin-left: 250px;
+}
+
+
+
+
+@media (max-width: 1024px){
+    .showvideo{
+        margin-left: 0;
+    }
+}
+
+
+
+@media (max-width: 768px){
+    .showvideo{
+        padding: 10px;
+    }
+}
