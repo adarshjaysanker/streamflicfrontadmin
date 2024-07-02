@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import './Addvideo.css';
 import axios from 'axios'
 
@@ -22,10 +22,20 @@ function Addvideo() {
         movieVideo: null
     });
 
+    const [uploadProgress, setUploadProgress] = useState({
+        overall: 0,
+        titleBanner: 0,
+        infoBanner: 0,
+        trailerVideo: 0,
+        movieVideo: 0,
+        database: 0
+    });
+
+    const [isUploading, setIsUploading] = useState(false)
+
     const [trailerVideoPreviewUrl, setTrailerVideoPreviewUrl] = useState('');
     const [movieVideoPreviewUrl, setMovieVideoPreviewUrl] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState({frontend: 0, backend: 0});
+    
     
 
     const handleChange = (e) => {
@@ -99,8 +109,8 @@ function Addvideo() {
 
     const handleSubmit = async(e) => {
         e.preventDefault();
-        setIsLoading(true);
-        setUploadProgress({frontend: 0, backend: 0});
+        setIsUploading(true);
+       
         try{
             const formData = new FormData();
             for(const key in form){
@@ -112,21 +122,18 @@ function Addvideo() {
                     formData.append(key, Array.isArray(form[key]) ? JSON.stringify(form[key]) : form[key])
                 }
             }
-            const response = await axios.post('https://api.streamflics.xyz/admin/addnewvideo', formData, {
+            const response = await axios.post('http://localhost:5000/admin/addnewvideo', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
                 onUploadProgress: (ProgressEvent) => {
                     const percentCompleted = Math.round((ProgressEvent.loaded * 100) / ProgressEvent.total);
-                    setUploadProgress(prev => ({...prev, frontend: percentCompleted}));
+                    setUploadProgress(prev => ({...prev, overall: percentCompleted}))
+                  
                 },
-                responseType: 'text',
-            })
-            const lines = response.data.split('\n');
-            const lastLine = lines[lines.length - 2];
-            const lastEvent = JSON.parse(lastLine.substring(5));
+            });
 
-            if(lastEvent.message){
+            if(response.status === 200){
                 setForm({
                     title: '',
                     releaseYear: '',
@@ -144,20 +151,44 @@ function Addvideo() {
                     movieVideo: null
                 });
 
+                console.log(response.data);
                 setMovieVideoPreviewUrl('');
                 setTrailerVideoPreviewUrl('');
-                console.log(lastEvent.message);
-                console.log(lastEvent.savedNewVideo);
+                
                 alert('Video added successfully')
-            }else if(lastEvent.error){
-                console.error(lastEvent.error);
             }
         }catch(error){
              console.log(error);
-        }finally{
-            setIsLoading(false);
+             setIsUploading(false);
         }
     }
+
+    useEffect(() => {
+        let eventSource;
+        if(isUploading){
+            eventSource = new EventSource('http://localhost:5000/admin/upload-progress');
+            eventSource.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                setUploadProgress(prev => ({...prev, ...data}));
+
+                if(data.database === 100){
+                    eventSource.close();
+                    setIsUploading(false);
+                    alert('Video added successfully');
+                }
+            };
+            eventSource.onerror = (error) => {
+                console.error('Event source failed: ', error);
+                eventSource.close();
+                setIsUploading(false)
+            }
+        }
+        return () => {
+            if(eventSource){
+                eventSource.close();
+            }
+        }
+    }, [isUploading])
 
 
 
@@ -247,25 +278,23 @@ function Addvideo() {
                     <video src={movieVideoPreviewUrl} controls className='preview-video'></video>
                 )}
 
-                {isLoading && (
-                    <>
-                        <div className="loading-spinner">
-                            <div className="spinner"></div>
-                        </div>
-                        <div>
-                            <p>Frontend to Backend: {uploadProgress.frontend.toFixed(2)} %</p>
-                            <progress value={uploadProgress.frontend} max="100"/>
-                            <p>Backend to s3/Cloudfront: {uploadProgress.backend.toFixed(2)} %</p>
-                            <progress value={uploadProgress.backend} max="100"/>
-                        </div>
-                    </>
-                    
-                )}
-            
+                
 
-                <button type='submit' disabled={isLoading}>Add Movie</button>
+                <button type='submit' disabled={isUploading}>{isUploading ? 'Uploading...' : 'Add Movie'}</button>
                 
             </form>
+
+            {isUploading && (
+                <div className="upload-progress">
+                    <div className="spinner"></div>
+                    <p>Overall progress: {uploadProgress.overall}%</p>
+                    <p>Title Banner: {uploadProgress.titleBanner}%</p>
+                    <p>Info Banner: {uploadProgress.infoBanner}%</p>
+                    <p>Trailer Video: {uploadProgress.trailerVideo}%</p>
+                    <p>Movie Video: {uploadProgress.movieVideo}%</p>
+                    <p>Database Save: {uploadProgress.database}%</p>
+                </div>
+            )}
 
         </div>
     </div>
